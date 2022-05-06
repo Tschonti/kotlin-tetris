@@ -20,10 +20,20 @@ abstract class Tetrimino {
     abstract val blocks: List<Block>
     protected var orientation: Direction = Direction.UP
 
+    private fun rangeY(): IntRange {
+        return blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
+    }
+
+    fun yToMaxX(): List<Pair<Int, Int>> {
+        return rangeY().map { y -> Pair(blocks.filter { it.pos.y == y }.maxOf { it.pos.x }, y)}
+    }
+
+    fun yToMinX(): List<Pair<Int, Int>> {
+        return rangeY().map { y -> Pair(blocks.filter { it.pos.y == y }.minOf { it.pos.x }, y)}
+    }
+
     fun moveDown() {
-        val maxY = blocks.maxOf { it.pos.y }
-        val rangeX = blocks.minOf { it.pos.x }.rangeTo(blocks.maxOf { it.pos.x })
-        if (maxY < Constants.HEIGHT - 1 && maxY < board.tallestAfter(maxY, rangeX) + 1) {
+        if (blocks.maxOf { it.pos.y } < Constants.HEIGHT - 1 && board.blocksFromBottom(this) > 0) {
             board.remove(this)
             blocks.forEach { it.pos.y++ }
             board.add(this)
@@ -31,9 +41,7 @@ abstract class Tetrimino {
     }
 
     fun moveLeft() {
-        val minX = blocks.minOf { it.pos.x }
-        val rangeY = blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
-        if (minX > 0 && minX > board.rightMostBefore(minX, rangeY) + 1) {
+        if (board.canMoveLeft(this)) {
             board.remove(this)
             blocks.forEach { it.pos.x-- }
             board.add(this)
@@ -41,9 +49,7 @@ abstract class Tetrimino {
     }
 
     fun moveRight() {
-        val maxX = blocks.maxOf { it.pos.x }
-        val rangeY = blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
-        if (maxX < Constants.WIDTH - 1 && maxX < board.leftMostAfter(maxX, rangeY) - 1) {
+        if (board.canMoveRight(this)) {
             board.remove(this)
             blocks.forEach { it.pos.x++ }
             board.add(this)

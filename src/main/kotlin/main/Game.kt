@@ -63,7 +63,7 @@ class Game : Application() {
                 KeyCode.RIGHT -> board.activeTetrimino.moveRight()
                 KeyCode.DOWN -> board.activeTetrimino.moveDown()
                 KeyCode.LEFT -> board.activeTetrimino.moveLeft()
-                KeyCode.SPACE -> board.placePiece()
+                KeyCode.SPACE -> board.placeTetrimino()
                 else -> {}
             }
         }

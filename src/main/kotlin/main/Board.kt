@@ -3,7 +3,7 @@ package main
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 import pieces.Tetrimino
-import pieces.Yellow
+import java.util.Dictionary
 
 class Board {
     private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(Position(x, y), Color.GRAY, true)} }
@@ -48,8 +48,12 @@ class Board {
         }
     }
 
-    fun placePiece() {
-        activeTetrimino.place()
+    fun placeTetrimino() {
+        val diff = blocksFromBottom(activeTetrimino)
+        remove(activeTetrimino)
+        activeTetrimino.blocks.forEach { it.pos.y += diff }
+        add(activeTetrimino)
+
         activeTetrimino = Tetrimino.generateTetrimino()
         add(activeTetrimino)
     }
@@ -70,4 +74,23 @@ class Board {
         }
     }
 
+    fun blocksFromBottom(t: Tetrimino): Int {
+        val rangeX = t.blocks.minOf { it.pos.x }.rangeTo(t.blocks.maxOf { it.pos.x })
+        val xToY = rangeX.map { x -> Pair(x, t.blocks.filter { it.pos.x == x }.maxOf { it.pos.y })}
+        return xToY.minOf { (x, y) ->
+            try {
+                board.flatten().filter { it.pos.x == x && it.pos.y > y && !it.empty}.minOf {it.pos.y } - y - 1
+            } catch (e: NoSuchElementException) {
+                Constants.HEIGHT - y - 1
+            }
+        }
+    }
+
+    fun canMoveRight(t: Tetrimino): Boolean {
+        return t.yToMaxX().all { (x, y) -> x + 1 < (board[y].firstOrNull { it.pos.x > x && !it.empty }?.pos?.x ?: Constants.WIDTH )}
+    }
+
+    fun canMoveLeft(t: Tetrimino): Boolean {
+        return t.yToMinX().all { (x, y) -> x - 1 > (board[y].lastOrNull { it.pos.x < x && !it.empty }?.pos?.x ?: -1 )}
+    }
 }
