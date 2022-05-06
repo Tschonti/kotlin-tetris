@@ -1,4 +1,4 @@
-package com.example
+package main
 
 import javafx.animation.AnimationTimer
 import javafx.application.Application
@@ -11,6 +11,7 @@ import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import javafx.stage.Stage
+import pieces.Piece
 
 class Game : Application() {
 
@@ -57,6 +58,9 @@ class Game : Application() {
         }.start()
 
         mainStage.show()
+        val b = Board()
+        Piece.board = b
+        b.test()
     }
 
     private fun prepareActionHandlers() {
