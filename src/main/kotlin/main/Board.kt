@@ -2,16 +2,16 @@ package main
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
-import pieces.Piece
+import pieces.Tetrimino
 import pieces.Yellow
 
 class Board {
-    private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(true, Position(x, y))} }
-    var activePiece: Piece = Yellow()
+    private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(Position(x, y), Color.GRAY, true)} }
+    var activeTetrimino: Tetrimino = Tetrimino.generateTetrimino()
     //private var ghost: Piece
 
     init {
-        activePiece.blocks.forEach {
+        activeTetrimino.blocks.forEach {
             board[it.pos.y][it.pos.x] = it
         }
     }
@@ -26,11 +26,11 @@ class Board {
         board[p2.y][p2.x] = temp
     }
 
-    fun remove(p: Piece) {
-        p.blocks.forEach { board[it.pos.y][it.pos.x] = Block(true, it.pos, Color.GRAY) }
+    fun remove(p: Tetrimino) {
+        p.blocks.forEach { board[it.pos.y][it.pos.x] = Block(it.pos, Color.GRAY, true) }
     }
 
-    fun add(p: Piece) {
+    fun add(p: Tetrimino) {
         p.blocks.forEach { board[it.pos.y][it.pos.x] = it }
 
     }
@@ -48,6 +48,12 @@ class Board {
         }
     }
 
+    fun placePiece() {
+        activeTetrimino.place()
+        activeTetrimino = Tetrimino.generateTetrimino()
+        add(activeTetrimino)
+    }
+
     fun leftMostAfter(afterX: Int, rangeY: IntRange): Int {
         return board.copyOfRange(rangeY.first, rangeY.last + 1).minOf { row -> row.firstOrNull { block -> block.pos.x > afterX && !block.empty }?.pos?.x ?: Constants.WIDTH }
     }
@@ -57,8 +63,11 @@ class Board {
     }
 
     fun tallestAfter(afterY: Int, rangex: IntRange): Int {
-        //return board.copyOfRange(rangeY.first, rangeY.last + 1).maxOf { row -> row.lastOrNull { block -> block.pos.x < beforeX && !block.empty }?.pos?.x ?: -1 }
-        return Constants.HEIGHT
+        return try {
+            board.flatten().filter { b -> b.pos.x in rangex && b.pos.y > afterY && !b.empty }.minOf { it.pos.y }
+        } catch (e: NoSuchElementException) {
+            Constants.HEIGHT
+        }
     }
 
 }

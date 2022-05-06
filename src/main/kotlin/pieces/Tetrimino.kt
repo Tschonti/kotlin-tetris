@@ -2,9 +2,20 @@ package pieces
 
 import main.*
 
-abstract class Piece {
+abstract class Tetrimino {
     companion object {
         lateinit var board: Board
+        fun generateTetrimino(): Tetrimino {
+            return when (Game.random.nextInt(0, 7)) {
+                0 -> Blue()
+                1 -> Cyan()
+                2 -> Green()
+                3 -> Orange()
+                4 -> Purple()
+                5 -> Red()
+                else -> Yellow()
+            }
+        }
     }
     abstract val blocks: List<Block>
     protected var orientation: Direction = Direction.UP
@@ -37,6 +48,15 @@ abstract class Piece {
             blocks.forEach { it.pos.x++ }
             board.add(this)
         }
+    }
+
+    fun place() {
+        val maxY = blocks.maxOf { it.pos.y }
+        val newHeight = board.tallestAfter(maxY, blocks.minOf { it.pos.x }.rangeTo(blocks.maxOf { it.pos.x })) - 1
+        val diff = newHeight - maxY
+        board.remove(this);
+        blocks.forEach { it.pos.y += diff }
+        board.add(this)
     }
 
     abstract fun rotateRight()

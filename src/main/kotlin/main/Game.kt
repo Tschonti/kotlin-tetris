@@ -7,17 +7,18 @@ import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
-import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import javafx.stage.Stage
-import pieces.Piece
+import pieces.Tetrimino
+import kotlin.random.Random
 
 class Game : Application() {
 
     companion object {
         private const val WIDTH = 512
         private const val HEIGHT = 720
+        val random = Random(System.currentTimeMillis())
     }
 
     private lateinit var mainScene: Scene
@@ -53,15 +54,16 @@ class Game : Application() {
         }.start()
 
         mainStage.show()
-        Piece.board = board
+        Tetrimino.board = board
     }
 
     private fun prepareActionHandlers() {
         mainScene.onKeyPressed = EventHandler { event ->
             when(event.code) {
-                KeyCode.RIGHT -> board.activePiece.moveRight()
-                KeyCode.DOWN -> board.activePiece.moveDown()
-                KeyCode.LEFT -> board.activePiece.moveLeft()
+                KeyCode.RIGHT -> board.activeTetrimino.moveRight()
+                KeyCode.DOWN -> board.activeTetrimino.moveDown()
+                KeyCode.LEFT -> board.activeTetrimino.moveLeft()
+                KeyCode.SPACE -> board.placePiece()
                 else -> {}
             }
         }
@@ -83,20 +85,13 @@ class Game : Application() {
         // clear canvas
         graphicsContext.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
 
-        // draw background
-        //graphicsContext.drawImage(space, 0.0, 0.0)
-
         // perform world updates
         board.draw(graphicsContext)
-        graphicsContext.fill = Color.GRAY
-
-        // draw sun
-        //graphicsContext.drawImage(sun, sunX.toDouble(), sunY.toDouble())
 
         // display crude fps counter
         val elapsedMs = elapsedNanos / 1_000_000
         if (elapsedMs != 0L) {
-            graphicsContext.fill = Color.WHITE
+            graphicsContext.fill = Color.BLACK
             graphicsContext.fillText("${1000 / elapsedMs} fps", 10.0, 10.0)
         }
     }
