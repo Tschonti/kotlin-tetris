@@ -17,17 +17,12 @@ class Game : Application() {
 
     companion object {
         private const val WIDTH = 512
-        private const val HEIGHT = 512
+        private const val HEIGHT = 720
     }
 
     private lateinit var mainScene: Scene
     private lateinit var graphicsContext: GraphicsContext
-
-    private lateinit var space: Image
-    private lateinit var sun: Image
-
-    private var sunX = WIDTH / 2
-    private var sunY = HEIGHT / 2
+    private val board: Board = Board()
 
     private var lastFrameTime: Long = System.nanoTime()
 
@@ -35,7 +30,7 @@ class Game : Application() {
     private val currentlyActiveKeys = mutableSetOf<KeyCode>()
 
     override fun start(mainStage: Stage) {
-        mainStage.title = "Event Handling"
+        mainStage.title = "Tetris"
 
         val root = Group()
         mainScene = Scene(root)
@@ -58,14 +53,17 @@ class Game : Application() {
         }.start()
 
         mainStage.show()
-        val b = Board()
-        Piece.board = b
-        b.test()
+        Piece.board = board
     }
 
     private fun prepareActionHandlers() {
         mainScene.onKeyPressed = EventHandler { event ->
-            currentlyActiveKeys.add(event.code)
+            when(event.code) {
+                KeyCode.RIGHT -> board.activePiece.moveRight()
+                KeyCode.DOWN -> board.activePiece.moveDown()
+                KeyCode.LEFT -> board.activePiece.moveLeft()
+                else -> {}
+            }
         }
         mainScene.onKeyReleased = EventHandler { event ->
             currentlyActiveKeys.remove(event.code)
@@ -73,10 +71,7 @@ class Game : Application() {
     }
 
     private fun loadGraphics() {
-        // prefixed with / to indicate that the files are
-        // in the root of the "resources" folder
-        space = Image(getResource("/space.png"))
-        sun = Image(getResource("/sun.png"))
+
     }
 
     private fun tickAndRender(currentNanoTime: Long) {
@@ -89,13 +84,14 @@ class Game : Application() {
         graphicsContext.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
 
         // draw background
-        graphicsContext.drawImage(space, 0.0, 0.0)
+        //graphicsContext.drawImage(space, 0.0, 0.0)
 
         // perform world updates
-        updateSunPosition()
+        board.draw(graphicsContext)
+        graphicsContext.fill = Color.GRAY
 
         // draw sun
-        graphicsContext.drawImage(sun, sunX.toDouble(), sunY.toDouble())
+        //graphicsContext.drawImage(sun, sunX.toDouble(), sunY.toDouble())
 
         // display crude fps counter
         val elapsedMs = elapsedNanos / 1_000_000
@@ -105,19 +101,5 @@ class Game : Application() {
         }
     }
 
-    private fun updateSunPosition() {
-        if (currentlyActiveKeys.contains(KeyCode.LEFT)) {
-            sunX--
-        }
-        if (currentlyActiveKeys.contains(KeyCode.RIGHT)) {
-            sunX++
-        }
-        if (currentlyActiveKeys.contains(KeyCode.UP)) {
-            sunY--
-        }
-        if (currentlyActiveKeys.contains(KeyCode.DOWN)) {
-            sunY++
-        }
-    }
 
 }

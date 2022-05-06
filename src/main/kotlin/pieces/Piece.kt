@@ -6,33 +6,36 @@ abstract class Piece {
     companion object {
         lateinit var board: Board
     }
-    protected abstract val blocks: List<Block>
+    abstract val blocks: List<Block>
     protected var orientation: Direction = Direction.UP
 
     fun moveDown() {
-        if (blocks.minOf { it.pos.y } < Constants.HEIGHT - 1) {
-            blocks.forEach {
-                board.swap(it.pos, Position(it.pos.x, it.pos.y + 1))
-                it.pos.y++
-            }
+        val maxY = blocks.maxOf { it.pos.y }
+        val rangeX = blocks.minOf { it.pos.x }.rangeTo(blocks.maxOf { it.pos.x })
+        if (maxY < Constants.HEIGHT - 1 && maxY < board.tallestAfter(maxY, rangeX) + 1) {
+            board.remove(this)
+            blocks.forEach { it.pos.y++ }
+            board.add(this)
         }
     }
 
     fun moveLeft() {
-        if (blocks.minOf { it.pos.x } > 0) {
-            blocks.forEach {
-                board.swap(it.pos, Position(it.pos.x - 1, it.pos.y))
-                it.pos.x--
-            }
+        val minX = blocks.minOf { it.pos.x }
+        val rangeY = blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
+        if (minX > 0 && minX > board.rightMostBefore(minX, rangeY) + 1) {
+            board.remove(this)
+            blocks.forEach { it.pos.x-- }
+            board.add(this)
         }
     }
 
     fun moveRight() {
-        if (blocks.maxOf { it.pos.x } < Constants.WIDTH - 1) {
-            blocks.forEach {
-                board.swap(it.pos, Position(it.pos.x + 1, it.pos.y))
-                it.pos.x++
-            }
+        val maxX = blocks.maxOf { it.pos.x }
+        val rangeY = blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
+        if (maxX < Constants.WIDTH - 1 && maxX < board.leftMostAfter(maxX, rangeY) - 1) {
+            board.remove(this)
+            blocks.forEach { it.pos.x++ }
+            board.add(this)
         }
     }
 
