@@ -5,34 +5,40 @@ import javafx.scene.paint.Color
 import pieces.Tetrimino
 import java.util.Dictionary
 
-class Board {
+class Board(private val game: Game) {
     private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(Position(x, y), Color.GRAY, true)} }
-    var activeTetrimino: Tetrimino = Tetrimino.generateTetrimino()
+    lateinit var activeTetrimino: Tetrimino
     //private var ghost: Piece
 
     init {
-        activeTetrimino.blocks.forEach {
-            board[it.pos.y][it.pos.x] = it
-        }
+        newTetrimino()
+    }
+
+    private fun newTetrimino() {
+        activeTetrimino = Tetrimino.generateTetrimino()
+        add(activeTetrimino)
     }
 
     fun get(p: Position): Block {
         return board[p.y][p.x]
     }
 
-    fun swap(p1: Position, p2: Position) {
+    private fun swap(p1: Position, p2: Position) {
         val temp = get(p1)
         board[p1.y][p1.x] = get(p2)
         board[p2.y][p2.x] = temp
     }
 
     fun remove(p: Tetrimino) {
-        p.blocks.forEach { board[it.pos.y][it.pos.x] = Block(it.pos, Color.GRAY, true) }
+        p.blocks.forEach { board[it.pos.y][it.pos.x] = Block(Position(it.pos.x, it.pos.y), Color.GRAY, true) }
     }
 
     fun add(p: Tetrimino) {
-        p.blocks.forEach { board[it.pos.y][it.pos.x] = it }
-
+        p.blocks.forEach {
+            if (!board[it.pos.y][it.pos.x].empty) {
+                throw IllegalStateException("There's another block there!")
+            }
+            board[it.pos.y][it.pos.x] = it }
     }
 
     fun draw(gc: GraphicsContext) {
@@ -53,31 +59,13 @@ class Board {
         remove(activeTetrimino)
         activeTetrimino.blocks.forEach { it.pos.y += diff }
         add(activeTetrimino)
+        clearRows()
 
-        activeTetrimino = Tetrimino.generateTetrimino()
-        add(activeTetrimino)
-    }
-
-    fun leftMostAfter(afterX: Int, rangeY: IntRange): Int {
-        return board.copyOfRange(rangeY.first, rangeY.last + 1).minOf { row -> row.firstOrNull { block -> block.pos.x > afterX && !block.empty }?.pos?.x ?: Constants.WIDTH }
-    }
-
-    fun rightMostBefore(beforeX: Int, rangeY: IntRange): Int {
-        return board.copyOfRange(rangeY.first, rangeY.last + 1).maxOf { row -> row.lastOrNull { block -> block.pos.x < beforeX && !block.empty }?.pos?.x ?: -1 }
-    }
-
-    fun tallestAfter(afterY: Int, rangex: IntRange): Int {
-        return try {
-            board.flatten().filter { b -> b.pos.x in rangex && b.pos.y > afterY && !b.empty }.minOf { it.pos.y }
-        } catch (e: NoSuchElementException) {
-            Constants.HEIGHT
-        }
+        newTetrimino()
     }
 
     fun blocksFromBottom(t: Tetrimino): Int {
-        val rangeX = t.blocks.minOf { it.pos.x }.rangeTo(t.blocks.maxOf { it.pos.x })
-        val xToY = rangeX.map { x -> Pair(x, t.blocks.filter { it.pos.x == x }.maxOf { it.pos.y })}
-        return xToY.minOf { (x, y) ->
+        return t.xToMaxY().minOf { (x, y) ->
             try {
                 board.flatten().filter { it.pos.x == x && it.pos.y > y && !it.empty}.minOf {it.pos.y } - y - 1
             } catch (e: NoSuchElementException) {
@@ -92,5 +80,40 @@ class Board {
 
     fun canMoveLeft(t: Tetrimino): Boolean {
         return t.yToMinX().all { (x, y) -> x - 1 > (board[y].lastOrNull { it.pos.x < x && !it.empty }?.pos?.x ?: -1 )}
+    }
+
+    fun step() {
+        if (blocksFromBottom(activeTetrimino) > 0) {
+            activeTetrimino.moveDown()
+        } else {
+            clearRows()
+            newTetrimino()
+        }
+    }
+
+    private fun clearRows() {
+        val rowsToClear = board.filter { row -> row.all { block -> !block.empty } }
+        rowsToClear.forEach { it.forEach { b -> b.makeEmpty() } }
+        val rowIndicesToClear = rowsToClear.map { it[0].pos.y }.sortedDescending().toMutableList()
+        rowIndicesToClear.forEachIndexed { idx, y ->
+            moveRowsDown(y)
+            for (y2 in idx + 1 until rowIndicesToClear.size) {
+                rowIndicesToClear[y2]++
+            }
+        }
+        game.rowsCleared(rowsToClear.size)
+    }
+
+    private fun moveRowsDown(until: Int) {
+        for (y in until - 1 downTo  0) {
+            for (x in 0 until Constants.WIDTH) {
+                if (board[y][x].pos.y == 19) {
+                    println()
+                }
+                swap(board[y][x].pos, Position(board[y][x].pos.x, board[y][x].pos.y + 1))
+                board[y + 1][x].pos = Position(x, y + 1)
+                board[y][x].pos = Position(x, y)
+            }
+        }
     }
 }

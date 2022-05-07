@@ -24,6 +24,14 @@ abstract class Tetrimino {
         return blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
     }
 
+    private fun rangeX(): IntRange {
+        return blocks.minOf { it.pos.x }.rangeTo(blocks.maxOf { it.pos.x })
+    }
+
+    fun xToMaxY(): List<Pair<Int, Int>> {
+        return rangeX().map { x -> Pair(x, blocks.filter { it.pos.x == x }.maxOf { it.pos.y })}
+    }
+
     fun yToMaxX(): List<Pair<Int, Int>> {
         return rangeY().map { y -> Pair(blocks.filter { it.pos.y == y }.maxOf { it.pos.x }, y)}
     }
@@ -54,15 +62,6 @@ abstract class Tetrimino {
             blocks.forEach { it.pos.x++ }
             board.add(this)
         }
-    }
-
-    fun place() {
-        val maxY = blocks.maxOf { it.pos.y }
-        val newHeight = board.tallestAfter(maxY, blocks.minOf { it.pos.x }.rangeTo(blocks.maxOf { it.pos.x })) - 1
-        val diff = newHeight - maxY
-        board.remove(this);
-        blocks.forEach { it.pos.y += diff }
-        board.add(this)
     }
 
     abstract fun rotateRight()

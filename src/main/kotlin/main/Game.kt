@@ -23,9 +23,11 @@ class Game : Application() {
 
     private lateinit var mainScene: Scene
     private lateinit var graphicsContext: GraphicsContext
-    private val board: Board = Board()
+    private val board: Board = Board(this)
+    private var interval = 500
 
     private var lastFrameTime: Long = System.nanoTime()
+    private var sinceInterval: Long = 0
 
     // use a set so duplicates are not possible
     private val currentlyActiveKeys = mutableSetOf<KeyCode>()
@@ -90,11 +92,22 @@ class Game : Application() {
 
         // display crude fps counter
         val elapsedMs = elapsedNanos / 1_000_000
+        sinceInterval += elapsedMs
+
+        if (sinceInterval > interval) {
+            sinceInterval -= interval
+            board.step()
+        }
         if (elapsedMs != 0L) {
             graphicsContext.fill = Color.BLACK
             graphicsContext.fillText("${1000 / elapsedMs} fps", 10.0, 10.0)
         }
     }
 
+    fun rowsCleared(count: Int) {
+        if (count > 0) {
+            println("$count rows cleared!")
+        }
+    }
 
 }
