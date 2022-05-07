@@ -6,7 +6,7 @@ abstract class Tetrimino {
     companion object {
         lateinit var board: Board
         fun generateTetrimino(): Tetrimino {
-            return when (Game.random.nextInt(0, 7)) {
+            return when (Game.random.nextInt(0, 4)) {
                 0 -> Blue()
                 1 -> Cyan()
                 2 -> Green()
@@ -17,10 +17,15 @@ abstract class Tetrimino {
             }
         }
     }
+    abstract val size: Int
     abstract val blocks: List<Block>
     protected var orientation: Direction = Direction.UP
+    protected var leftBound = -1
+    protected var rightBound = Constants.WIDTH
+    protected var downBound = Constants.HEIGHT
+    protected var upBound = -1
 
-    private fun rangeY(): IntRange {
+        private fun rangeY(): IntRange {
         return blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
     }
 
@@ -30,6 +35,10 @@ abstract class Tetrimino {
 
     fun xToMaxY(): List<Pair<Int, Int>> {
         return rangeX().map { x -> Pair(x, blocks.filter { it.pos.x == x }.maxOf { it.pos.y })}
+    }
+
+    fun xToMinY(): List<Pair<Int, Int>> {
+        return rangeX().map { x -> Pair(x, blocks.filter { it.pos.x == x }.minOf { it.pos.y })}
     }
 
     fun yToMaxX(): List<Pair<Int, Int>> {
@@ -64,6 +73,42 @@ abstract class Tetrimino {
         }
     }
 
-    abstract fun rotateRight()
+    protected fun baseCoord(coord: Int, min: Int, max: Int, fromMin: Int, fromMax: Int): Int {
+        var res = min + 1
+        if (coord - fromMin > min) {
+            res = if (coord + fromMax < max) {
+                coord - fromMin
+            } else {
+                max - size
+            }
+        }
+        return res
+    }
+
+    open fun rotateRight(): Boolean {
+        leftBound = board.leftBound(this)
+        rightBound = board.rightBound(this)
+        downBound = board.downBound(this)
+        upBound = board.upBound(this)
+
+        println("left: $leftBound, right: $rightBound, up: $upBound, down: $downBound")
+
+        when(orientation) {
+            Direction.UP, Direction.DOWN -> {
+                if (rightBound - leftBound <= size) {
+                    return false
+                }
+            }
+            Direction.LEFT, Direction.RIGHT -> {
+                if (downBound - upBound <= size) {
+                    return false
+                }
+            }
+        }
+        orientation = orientation.next()
+        board.remove(this)
+        return true
+    }
+
     abstract fun rotateLeft()
 }

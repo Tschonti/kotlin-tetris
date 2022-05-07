@@ -5,6 +5,7 @@ import main.Block
 import main.Position
 
 class Red : Tetrimino() {
+    override val size: Int = 3
     override val blocks: List<Block> = listOf(
         Block(Position(5, 0), Color.RED),
         Block(Position(5, 1), Color.RED),
@@ -12,7 +13,7 @@ class Red : Tetrimino() {
         Block(Position(4, 2), Color.RED),
     )
 
-    override fun rotateRight() {
+    override fun rotateRight(): Boolean {
         TODO("Not yet implemented")
     }
 

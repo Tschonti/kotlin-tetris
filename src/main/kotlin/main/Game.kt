@@ -24,13 +24,11 @@ class Game : Application() {
     private lateinit var mainScene: Scene
     private lateinit var graphicsContext: GraphicsContext
     private val board: Board = Board(this)
-    private var interval = 500
+    private var interval = 10650
 
     private var lastFrameTime: Long = System.nanoTime()
     private var sinceInterval: Long = 0
 
-    // use a set so duplicates are not possible
-    private val currentlyActiveKeys = mutableSetOf<KeyCode>()
 
     override fun start(mainStage: Stage) {
         mainStage.title = "Tetris"
@@ -66,11 +64,9 @@ class Game : Application() {
                 KeyCode.DOWN -> board.activeTetrimino.moveDown()
                 KeyCode.LEFT -> board.activeTetrimino.moveLeft()
                 KeyCode.SPACE -> board.placeTetrimino()
+                KeyCode.UP -> board.activeTetrimino.rotateRight()
                 else -> {}
             }
-        }
-        mainScene.onKeyReleased = EventHandler { event ->
-            currentlyActiveKeys.remove(event.code)
         }
     }
 
@@ -106,7 +102,7 @@ class Game : Application() {
 
     fun rowsCleared(count: Int) {
         if (count > 0) {
-            println("$count rows cleared!")
+            println("$count row(s) cleared!")
         }
     }
 

@@ -3,7 +3,6 @@ package main
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 import pieces.Tetrimino
-import java.util.Dictionary
 
 class Board(private val game: Game) {
     private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(Position(x, y), Color.GRAY, true)} }
@@ -16,7 +15,11 @@ class Board(private val game: Game) {
 
     private fun newTetrimino() {
         activeTetrimino = Tetrimino.generateTetrimino()
-        add(activeTetrimino)
+        try {
+            add(activeTetrimino)
+        } catch (e: IllegalStateException) {
+            println("Game over!")
+        }
     }
 
     fun get(p: Position): Block {
@@ -80,6 +83,28 @@ class Board(private val game: Game) {
 
     fun canMoveLeft(t: Tetrimino): Boolean {
         return t.yToMinX().all { (x, y) -> x - 1 > (board[y].lastOrNull { it.pos.x < x && !it.empty }?.pos?.x ?: -1 )}
+    }
+
+    fun leftBound(t: Tetrimino): Int {
+        return t.yToMinX().maxOf { (x, y) -> (board[y].lastOrNull { it.pos.x < x && !it.empty }?.pos?.x ?: -1 )}
+    }
+
+    fun rightBound(t: Tetrimino): Int {
+        return t.yToMaxX().minOf { (x, y) -> (board[y].firstOrNull { it.pos.x > x && !it.empty }?.pos?.x ?: Constants.WIDTH )}
+    }
+
+    fun downBound(t: Tetrimino): Int {
+        return t.blocks.maxOf {it.pos.y} + blocksFromBottom(t) + 1
+    }
+
+    fun upBound(t: Tetrimino): Int {
+        return t.xToMinY().maxOf { (x, y) ->
+            try {
+                board.flatten().filter { it.pos.x == x && it.pos.y < y && !it.empty}.maxOf {it.pos.y }
+            } catch (e: NoSuchElementException) {
+                -1
+            }
+        }
     }
 
     fun step() {
