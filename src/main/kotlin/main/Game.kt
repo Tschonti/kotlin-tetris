@@ -24,7 +24,7 @@ class Game : Application() {
     private lateinit var mainScene: Scene
     private lateinit var graphicsContext: GraphicsContext
     private val board: Board = Board(this)
-    private var interval = 10650
+    private var interval = 650
 
     private var lastFrameTime: Long = System.nanoTime()
     private var sinceInterval: Long = 0

@@ -1,17 +1,17 @@
 package pieces
 
-import javafx.scene.paint.Color
 import main.Block
+import main.Constants
 import main.Direction
 import main.Position
 
 class Cyan : Tetrimino() {
     override val size: Int = 4
     override val blocks: List<Block> = listOf(
-        Block(Position(5, 0), Color.CYAN),
-        Block(Position(5, 1), Color.CYAN),
-        Block(Position(5, 2), Color.CYAN),
-        Block(Position(5, 3), Color.CYAN),
+        Block(Position(5, 0), Constants.CYAN),
+        Block(Position(5, 1), Constants.CYAN),
+        Block(Position(5, 2), Constants.CYAN),
+        Block(Position(5, 3), Constants.CYAN),
     )
 
     override fun rotateRight(): Boolean {

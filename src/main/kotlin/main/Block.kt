@@ -8,7 +8,7 @@ class Block(var pos: Position, var color: Color, var empty: Boolean = false) {
     }
 
     fun makeEmpty() {
-        color = Color.GRAY
+        color = Constants.GRAY
         empty = true
     }
 }

@@ -1,20 +1,54 @@
 package pieces
 
-import javafx.scene.paint.Color
 import main.Block
+import main.Constants
+import main.Direction
 import main.Position
 
 class Red : Tetrimino() {
     override val size: Int = 3
     override val blocks: List<Block> = listOf(
-        Block(Position(5, 0), Color.RED),
-        Block(Position(5, 1), Color.RED),
-        Block(Position(4, 1), Color.RED),
-        Block(Position(4, 2), Color.RED),
+        Block(Position(5, 0), Constants.RED),
+        Block(Position(5, 1), Constants.RED),
+        Block(Position(4, 1), Constants.RED),
+        Block(Position(4, 2), Constants.RED),
     )
 
     override fun rotateRight(): Boolean {
-        TODO("Not yet implemented")
+        if (super.rotateRight()) {
+            when (orientation) {
+                Direction.RIGHT -> {
+                    val baseX = baseCoord(blocks[0].pos.x, leftBound, rightBound, 1, 1)
+                    blocks[0].pos = Position(baseX + 2, blocks[0].pos.y + 2)
+                    blocks[1].pos = Position(baseX + 1, blocks[1].pos.y + 1)
+                    blocks[2].pos = Position(baseX + 1, blocks[2].pos.y)
+                    blocks[3].pos = Position(baseX, blocks[3].pos.y - 1)
+                }
+                Direction.DOWN -> {
+                    val baseY = baseCoord(blocks[0].pos.y, upBound, downBound, 2, 0)
+                    blocks[0].pos = Position(blocks[0].pos.x - 2, baseY + 2)
+                    blocks[1].pos = Position(blocks[1].pos.x - 1, baseY + 1)
+                    blocks[2].pos = Position(blocks[2].pos.x, baseY + 1)
+                    blocks[3].pos = Position(blocks[3].pos.x + 1, baseY)
+                }
+                Direction.LEFT -> {
+                    val baseX = baseCoord(blocks[0].pos.x, leftBound, rightBound, 1, 1)
+                    blocks[0].pos = Position(baseX, blocks[0].pos.y - 1)
+                    blocks[1].pos = Position(baseX + 1, blocks[1].pos.y)
+                    blocks[2].pos = Position(baseX + 1, blocks[2].pos.y + 1)
+                    blocks[3].pos = Position(baseX + 2, blocks[3].pos.y + 2)
+                }
+                Direction.UP -> {
+                    val baseY = baseCoord(blocks[0].pos.y, upBound, downBound, 1, 1)
+                    blocks[0].pos = Position(blocks[0].pos.x + 2, baseY)
+                    blocks[1].pos = Position(blocks[1].pos.x + 1, baseY + 1)
+                    blocks[2].pos = Position(blocks[2].pos.x, baseY + 1)
+                    blocks[3].pos = Position(blocks[3].pos.x - 1, baseY + 2)
+                }
+            }
+            board.add(this)
+        }
+        return true
     }
 
     override fun rotateLeft() {
