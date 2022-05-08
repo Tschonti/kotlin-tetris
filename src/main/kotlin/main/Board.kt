@@ -2,6 +2,7 @@ package main
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
 import pieces.Tetrimino
 
 class Board(private val game: Game) {
@@ -87,6 +88,10 @@ class Board(private val game: Game) {
             }
         }
 
+        gc.fill = Constants.GRAY
+        gc.font = Constants.BIG_FONT
+        gc.fillText("Next", 400.0, 80.0)
+        gc.fillText("Stored", 2.0, 80.0)
         // draw the upcoming tetrimino
         drawRectWithTetrimino(gc, nextTetrimino, 400.0)
 
@@ -98,8 +103,8 @@ class Board(private val game: Game) {
      * Draws a gray, rounded rectangle from ([startX], [startY]) and [t] in the middle of it
      */
     private fun drawRectWithTetrimino(gc: GraphicsContext, t: Tetrimino?, startX: Double, startY: Double = 100.0) {
-        gc.stroke = Constants.GRAY
         gc.lineWidth = 2.0
+        gc.stroke = Constants.GRAY
         gc.strokeRoundRect(startX, startY, 110.0 , 110.0, 5.0, 5.0)
         if (t != null) {
             val startOfT = Position(t.blocks.minOf { it.pos.x }, t.blocks.minOf { it.pos.y })

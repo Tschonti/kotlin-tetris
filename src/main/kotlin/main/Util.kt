@@ -1,6 +1,7 @@
 package main
 
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
 
 fun getResource(filename: String): String {
     return Game::class.java.getResource(filename).toString()
@@ -40,5 +41,8 @@ class Constants {
         val boardOffsetX = 120.0
         val boardOffsetY = 100.0
         val gapBetweenBlocks = 2.0
+        val HUGE_FONT = Font(50.0)
+        val BIG_FONT = Font(30.0)
+        val SMALL_FONT = Font(10.0)
     }
 }

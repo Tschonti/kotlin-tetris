@@ -10,6 +10,7 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.Button
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
 import javafx.stage.Stage
 import pieces.Tetrimino
 import kotlin.random.Random
@@ -33,6 +34,7 @@ class Game : Application() {
 
     private var state = State.MENU
     private var score = 0
+    private var scored = 0
 
     override fun start(mainStage: Stage) {
         mainStage.title = "Tetris"
@@ -116,11 +118,26 @@ class Game : Application() {
         // clear canvas
         graphicsContext.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
 
-        // display crude fps counter
         val elapsedMs = elapsedNanos / 1_000_000
         if (state != State.MENU) {
+            graphicsContext.font = Constants.HUGE_FONT
+            graphicsContext.fill = Constants.PURPLE
+            graphicsContext.fillText("TETRIS", 180.0, 50.0)
+
             // perform world updates
             board.draw(graphicsContext)
+
+            graphicsContext.font = Constants.BIG_FONT
+            graphicsContext.fill = Constants.GRAY
+            graphicsContext.fillText("Score: $score", 2.0, 700.0)
+            if (scored > 0) {
+                graphicsContext.fillText("+$scored", 400.0, 700.0)
+            }
+
+            if (state == State.GAMEOVER) {
+                graphicsContext.fill = Constants.RED
+                graphicsContext.fillText("Game over!", 175.0, 700.0)
+            }
 
             if (state == State.PLAYING) {
                 sinceInterval += elapsedMs
@@ -130,7 +147,9 @@ class Game : Application() {
                 }
             }
         }
+        // display crude fps counter
         if (elapsedMs != 0L) {
+            graphicsContext.font = Constants.SMALL_FONT
             graphicsContext.fill = Color.BLACK
             graphicsContext.fillText("${1000 / elapsedMs} fps", 10.0, 10.0)
         }
@@ -138,9 +157,11 @@ class Game : Application() {
 
     fun rowsCleared(rows: Int, combo: Int) {
         if (rows > 0) {
-            val scored = ((rows - 1) * 200 + if (rows == 4) 200 else 100) * (combo + 1)
+            scored = ((rows - 1) * 200 + if (rows == 4) 200 else 100) * (combo + 1)
             score += scored
             println("Cleard $rows row(s) with x${combo+1} combo, scored $scored, new score: $score")
+        } else {
+            scored = 0
         }
     }
 
