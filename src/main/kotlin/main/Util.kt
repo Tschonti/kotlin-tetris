@@ -21,6 +21,10 @@ enum class Direction {
     }
 }
 
+enum class State {
+    MENU, PLAYING, PAUSED, GAMEOVER
+}
+
 class Constants {
     companion object {
         const val WIDTH = 10
@@ -33,5 +37,8 @@ class Constants {
         val YELLOW = Color(0.9098, 0.83921, 0.08235, 1.0)
         val CYAN = Color(0.2745, 0.83137, 0.8588, 1.0)
         val GREEN = Color(0.01569, 0.67, 0.09411, 1.0)
+        val boardOffsetX = 120.0
+        val boardOffsetY = 100.0
+        val gapBetweenBlocks = 2.0
     }
 }

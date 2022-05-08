@@ -1,27 +1,33 @@
 package main
 
 import javafx.scene.canvas.GraphicsContext
+import javafx.scene.paint.Color
 import pieces.Tetrimino
 
 class Board(private val game: Game) {
     private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(Position(x, y), Constants.GRAY, true)} }
     lateinit var activeTetrimino: Tetrimino
-    //private var ghost: Piece
+    private var nextTetrimino: Tetrimino = Tetrimino.generateTetrimino()
+    private var storedTetrimino: Tetrimino? = null
+    private var usedStore = false
+    private var combo = 0
 
     init {
         newTetrimino()
     }
 
     /**
-     * Replaces the active tetrimino with a new one.
+     * Replaces the active tetrimino with the next one and generates a new one to show as the upcoming.
      * If it collides with an existing block, notifies the controller about the game being over.
      */
     private fun newTetrimino() {
-        activeTetrimino = Tetrimino.generateTetrimino()
+        usedStore = false
+        activeTetrimino = nextTetrimino
+        nextTetrimino = Tetrimino.generateTetrimino()
         try {
             add(activeTetrimino)
         } catch (e: IllegalStateException) {
-            println("Game over!")
+            game.gameOver()
         }
     }
 
@@ -64,14 +70,44 @@ class Board(private val game: Game) {
      * Draws the board to the [gc]
      */
     fun draw(gc: GraphicsContext) {
-        val offsetX = 120.0
-        val offsetY = 100.0
-        val gap = 2.0
         for (y: Int in 0 until Constants.HEIGHT) {
             for (x: Int in 0 until Constants.WIDTH) {
                 val b = board[y][x]
                 gc.fill = b.color
-                gc.fillRect(offsetX + x * Block.size + x * gap, offsetY + y * Block.size + y * gap, Block.size, Block.size)
+                gc.fillRect(Constants.boardOffsetX + x * Block.size + x * Constants.gapBetweenBlocks, Constants.boardOffsetY + y * Block.size + y * Constants.gapBetweenBlocks, Block.size, Block.size)
+            }
+        }
+
+        //draw the ghost tetrimino
+        val diff = blocksFromBottom(activeTetrimino)
+        activeTetrimino.blocks.forEach {
+            if (board[it.pos.y + diff][it.pos.x].empty) {
+                gc.fill = Color(it.color.red, it.color.green, it.color.blue, 0.3)
+                gc.fillRect(Constants.boardOffsetX + it.pos.x * Block.size + it.pos.x * Constants.gapBetweenBlocks, Constants.boardOffsetY + (it.pos.y + diff) * Block.size + (it.pos.y + diff) * Constants.gapBetweenBlocks, Block.size, Block.size)
+            }
+        }
+
+        // draw the upcoming tetrimino
+        drawRectWithTetrimino(gc, nextTetrimino, 400.0)
+
+        // draw the stored tetrimino
+        drawRectWithTetrimino(gc, storedTetrimino, 2.0)
+    }
+
+    /**
+     * Draws a gray, rounded rectangle from ([startX], [startY]) and [t] in the middle of it
+     */
+    private fun drawRectWithTetrimino(gc: GraphicsContext, t: Tetrimino?, startX: Double, startY: Double = 100.0) {
+        gc.stroke = Constants.GRAY
+        gc.lineWidth = 2.0
+        gc.strokeRoundRect(startX, startY, 110.0 , 110.0, 5.0, 5.0)
+        if (t != null) {
+            val startOfT = Position(t.blocks.minOf { it.pos.x }, t.blocks.minOf { it.pos.y })
+            val h = (t.rangeY().last - t.rangeY().first + 1) * (Block.size + Constants.gapBetweenBlocks) - Constants.gapBetweenBlocks
+            val w = (t.rangeX().last - t.rangeX().first + 1) * (Block.size + Constants.gapBetweenBlocks) - Constants.gapBetweenBlocks
+            t.blocks.forEach { b ->
+                gc.fill = b.color
+                gc.fillRect(startX + 2 + (106 - w) / 2 + (b.pos.x - startOfT.x) * Block.size + (b.pos.x - startOfT.x) * Constants.gapBetweenBlocks, startY + 2 + (106 - h) / 2 + (b.pos.y - startOfT.y) * Block.size + (b.pos.y - startOfT.y) * Constants.gapBetweenBlocks, Block.size, Block.size)
             }
         }
     }
@@ -85,8 +121,26 @@ class Board(private val game: Game) {
         activeTetrimino.blocks.forEach { it.pos.y += diff }
         add(activeTetrimino)
         clearRows()
-
         newTetrimino()
+    }
+
+    /**
+     * If it hasn't been used since the current tetrimino appeared,
+     * stores the active tetrimino and replaces it with the one in the store or a new one
+     */
+    fun storeTetrimino() {
+        if (!usedStore) {
+            usedStore = true
+            val temp = storedTetrimino
+            remove(activeTetrimino)
+            storedTetrimino = activeTetrimino
+            storedTetrimino!!.toStartingPos()
+            if (temp == null) {
+                newTetrimino()
+            } else {
+                activeTetrimino = temp
+            }
+        }
     }
 
     /**
@@ -176,7 +230,12 @@ class Board(private val game: Game) {
                 rowIndicesToClear[y2]++
             }
         }
-        game.rowsCleared(rowsToClear.size)
+        game.rowsCleared(rowsToClear.size, combo)
+        if (rowsToClear.isNotEmpty()) {
+            combo++
+        } else {
+            combo = 0
+        }
     }
 
     /**

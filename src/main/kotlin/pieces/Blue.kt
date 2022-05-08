@@ -1,5 +1,6 @@
 package pieces
 
+import javafx.scene.paint.Color
 import main.Block
 import main.Constants
 import main.Direction
@@ -7,12 +8,10 @@ import main.Position
 
 class Blue : Tetrimino() {
     override val size: Int = 3
-    override val blocks: List<Block> = listOf(
-        Block(Position(4, 2), Constants.BLUE),
-        Block(Position(5, 0), Constants.BLUE),
-        Block(Position(5, 1), Constants.BLUE),
-        Block(Position(5, 2), Constants.BLUE),
-    )
+    override val color: Color = Constants.BLUE
+    init {
+        blocks.forEach { it.color = color }
+    }
 
     override fun rotateRight(): Boolean {
         if (super.rotateRight()) {
@@ -53,5 +52,14 @@ class Blue : Tetrimino() {
 
     override fun rotateLeft() {
         TODO("Not yet implemented")
+    }
+
+    override fun generateBlocks(): List<Block> {
+        return listOf(
+            Block(Position(4, 2)),
+            Block(Position(5, 0)),
+            Block(Position(5, 1)),
+            Block(Position(5, 2)),
+        )
     }
 }

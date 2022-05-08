@@ -1,5 +1,6 @@
 package pieces
 
+import javafx.scene.paint.Color
 import main.*
 
 abstract class Tetrimino {
@@ -18,24 +19,29 @@ abstract class Tetrimino {
         }
     }
     abstract val size: Int
-    abstract val blocks: List<Block>
+    var blocks: List<Block>
+    abstract val color: Color
     protected var orientation: Direction = Direction.UP
     protected var leftBound = -1
     protected var rightBound = Constants.WIDTH
     protected var downBound = Constants.HEIGHT
     protected var upBound = -1
 
+    init {
+        blocks = generateBlocks()
+    }
+
     /**
      * Return the range of the tetrimino's Y coordinates
      */
-    private fun rangeY(): IntRange {
+    fun rangeY(): IntRange {
         return blocks.minOf { it.pos.y }.rangeTo(blocks.maxOf { it.pos.y })
     }
 
     /**
      * Return the range of the tetrimino's X coordinates
      */
-    private fun rangeX(): IntRange {
+    fun rangeX(): IntRange {
         return blocks.minOf { it.pos.x }.rangeTo(blocks.maxOf { it.pos.x })
     }
 
@@ -148,5 +154,11 @@ abstract class Tetrimino {
         return true
     }
 
+    fun toStartingPos() {
+        blocks = generateBlocks()
+        blocks.forEach { it.color = color }
+    }
+
     abstract fun rotateLeft()
+    protected abstract fun generateBlocks(): List<Block>
 }
