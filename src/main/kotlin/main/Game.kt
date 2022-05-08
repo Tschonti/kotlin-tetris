@@ -8,26 +8,32 @@ import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.Button
+import javafx.scene.control.TextInputDialog
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
-import javafx.scene.text.Font
 import javafx.stage.Stage
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import pieces.Tetrimino
+import java.io.File
 import kotlin.random.Random
-import kotlin.system.exitProcess
 
 class Game : Application() {
-
     companion object {
         private const val WIDTH = 512
         private const val HEIGHT = 720
         val random = Random(System.currentTimeMillis())
     }
 
+    private lateinit var leaderboard: MutableList<Result>
     private lateinit var mainScene: Scene
     private lateinit var graphicsContext: GraphicsContext
+    private val textDialog = TextInputDialog()
+
     private lateinit var board: Board
-    private var interval = 650
+    private var interval = 700
+    private var lastThousand = 0
 
     private var lastFrameTime: Long = System.nanoTime()
     private var sinceInterval: Long = 0
@@ -38,12 +44,12 @@ class Game : Application() {
 
     override fun start(mainStage: Stage) {
         mainStage.title = "Tetris"
-
         // game scene
         val mainRoot = Group()
         mainScene = Scene(mainRoot)
         val canvas = Canvas(WIDTH.toDouble(), HEIGHT.toDouble())
         mainRoot.children.add(canvas)
+        textDialog.headerText = "Congrats, you earned a place on the leaderboard! Please enter your name"
 
         // menu scene
         val menuRoot = Group()
@@ -59,6 +65,8 @@ class Game : Application() {
             mainStage.scene = mainScene
             board = Board(this)
             Tetrimino.board = board
+            score = 0
+            scored = 0
             prepareActionHandlers()
         }
         /*val quitButton = Button("Quit game")
@@ -66,7 +74,7 @@ class Game : Application() {
         quitButton.onMouseClicked = EventHandler {
             exitProcess(0)
         }*/
-
+        leaderboard = Json.decodeFromString(File("leaderboard.json").readText())
 
         graphicsContext = canvas.graphicsContext2D
 
@@ -82,6 +90,37 @@ class Game : Application() {
 
     fun gameOver() {
         state = State.GAMEOVER
+        textDialog.contentText = ""
+        try {
+            textDialog.showAndWait()
+        } catch (e: IllegalStateException) {
+            Thread.sleep(100)
+            textDialog.showAndWait()
+        }
+        if (textDialog.editor.text.isNotEmpty()) {
+            var place = leaderboard.size
+            var found = false
+            leaderboard.forEach {
+                if (!found) {
+                    if (score >= it.points) {
+                        place = it.place
+                        found = true
+                        if (score > it.points) {
+                            it.place++
+                        }
+                    }
+                } else {
+                    it.place++
+                }
+            }
+            leaderboard.add(place, Result(place, textDialog.editor.text, score))
+            val f = File("leaderboard.json")
+            f.bufferedWriter().use {
+                val json = Json.encodeToString(leaderboard)
+                it.write(json)
+            }
+        }
+        state = State.MENU
     }
 
     private fun prepareActionHandlers() {
@@ -128,7 +167,7 @@ class Game : Application() {
             board.draw(graphicsContext)
 
             graphicsContext.font = Constants.BIG_FONT
-            graphicsContext.fill = Constants.GRAY
+            graphicsContext.fill = Constants.PURPLE
             graphicsContext.fillText("Score: $score", 2.0, 700.0)
             if (scored > 0) {
                 graphicsContext.fillText("+$scored", 400.0, 700.0)
@@ -160,6 +199,11 @@ class Game : Application() {
             scored = ((rows - 1) * 200 + if (rows == 4) 200 else 100) * (combo + 1)
             score += scored
             println("Cleard $rows row(s) with x${combo+1} combo, scored $scored, new score: $score")
+
+            if ((score - lastThousand) > 1000) {
+                lastThousand += 1000
+                interval -= 35
+            }
         } else {
             scored = 0
         }
