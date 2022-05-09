@@ -3,6 +3,8 @@ package main
 import javafx.animation.AnimationTimer
 import javafx.application.Application
 import javafx.event.EventHandler
+import javafx.geometry.Insets
+import javafx.geometry.Pos
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
@@ -10,7 +12,11 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.Button
 import javafx.scene.control.TextInputDialog
 import javafx.scene.input.KeyCode
+import javafx.scene.layout.BorderPane
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.scene.text.Text
+import javafx.scene.text.TextFlow
 import javafx.stage.Stage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -18,6 +24,7 @@ import kotlinx.serialization.encodeToString
 import pieces.Tetrimino
 import java.io.File
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 class Game : Application() {
     companion object {
@@ -26,10 +33,13 @@ class Game : Application() {
         val random = Random(System.currentTimeMillis())
     }
 
+    private lateinit var mainStage: Stage
     private lateinit var leaderboard: MutableList<Result>
     private lateinit var mainScene: Scene
+    private lateinit var menuScene: Scene
     private lateinit var graphicsContext: GraphicsContext
     private val textDialog = TextInputDialog()
+    private lateinit var leaderboardVBox: VBox
 
     private lateinit var board: Board
     private var interval = 700
@@ -43,6 +53,7 @@ class Game : Application() {
     private var scored = 0
 
     override fun start(mainStage: Stage) {
+        this.mainStage = mainStage
         mainStage.title = "Tetris"
         // game scene
         val mainRoot = Group()
@@ -50,16 +61,29 @@ class Game : Application() {
         val canvas = Canvas(WIDTH.toDouble(), HEIGHT.toDouble())
         mainRoot.children.add(canvas)
         textDialog.headerText = "Congrats, you earned a place on the leaderboard! Please enter your name"
+        textDialog.title = "Enter your name"
 
         // menu scene
         val menuRoot = Group()
-        val menuScene = Scene(menuRoot)
+        menuScene = Scene(menuRoot)
         val menuCanvas = Canvas(WIDTH.toDouble(), HEIGHT.toDouble())
         menuRoot.children.add(menuCanvas)
-        mainStage.scene = menuScene
-
+        val bp = BorderPane()
+        bp.padding = Insets(20.0, 50.0, 20.0, 50.0)
+        menuRoot.children.add(bp)
         val startButton = Button("Start game")
-        menuRoot.children.add(startButton)
+        val quitButton = Button("Quit game")
+        val title = Text("Tetris")
+        title.font = Constants.HUGE_FONT
+        val vbox = VBox()
+        vbox.spacing = 10.0
+        vbox.padding = Insets(0.0, 0.0, 20.0, 0.0)
+        vbox.alignment = Pos.BASELINE_CENTER
+        vbox.children.addAll(title, startButton, quitButton)
+        bp.top = vbox
+        this.mainStage.scene = menuScene
+
+        //menuRoot.children.add(startButton)
         startButton.onMouseClicked = EventHandler {
             state = State.PLAYING
             mainStage.scene = mainScene
@@ -67,15 +91,31 @@ class Game : Application() {
             Tetrimino.board = board
             score = 0
             scored = 0
+            interval = 700
+            lastThousand = 0
+            sinceInterval = 0
             prepareActionHandlers()
         }
-        /*val quitButton = Button("Quit game")
-        menuRoot.children.add(quitButton)
         quitButton.onMouseClicked = EventHandler {
             exitProcess(0)
-        }*/
-        leaderboard = Json.decodeFromString(File("leaderboard.json").readText())
+        }
 
+        //leaderboard
+        leaderboard = Json.decodeFromString(File("leaderboard.json").readText())
+        leaderboardVBox = VBox()
+        fillLeaderboard()
+
+        // how to play
+        val howToPlayTitle = Text("How to play")
+        howToPlayTitle.font = Constants.BIG_FONT
+        val howToPlayVBox = VBox()
+        howToPlayVBox.children.addAll(howToPlayTitle, Text("Standar Tetris game. Move the Tetrimino with the right,\nleft and down arrow keys, rotate it with the up arrow, \ndrop it with space, store it with shift.\nYou can pause/resume the game with Enter. \nGood luck!"))
+        howToPlayVBox.padding = Insets(20.0, 0.0, 80.0, 0.0)
+
+        bp.center = VBox(leaderboardVBox, howToPlayVBox)
+        val creditText = Text("Developed by: Sámuel Fekete\nGitHub username: Tschonti")
+        creditText.font = Constants.BIG_FONT
+        bp.bottom = creditText
         graphicsContext = canvas.graphicsContext2D
 
         // Main loop
@@ -88,39 +128,54 @@ class Game : Application() {
         mainStage.show()
     }
 
+    private fun fillLeaderboard() {
+        leaderboardVBox.children.clear()
+        val leaderboardTitle = Text("Leaderboard")
+        leaderboardTitle.font = Constants.BIG_FONT
+        val results: List<String> = leaderboard.map { "${it.place + 1}. ${it.name} ${it.points}" }
+
+        leaderboardVBox.children.add(leaderboardTitle)
+        results.forEach { leaderboardVBox.children.add(Text(it)) }
+
+    }
+
     fun gameOver() {
         state = State.GAMEOVER
-        textDialog.contentText = ""
-        try {
-            textDialog.showAndWait()
-        } catch (e: IllegalStateException) {
-            Thread.sleep(100)
-            textDialog.showAndWait()
-        }
-        if (textDialog.editor.text.isNotEmpty()) {
-            var place = leaderboard.size
-            var found = false
-            leaderboard.forEach {
-                if (!found) {
-                    if (score >= it.points) {
-                        place = it.place
-                        found = true
-                        if (score > it.points) {
-                            it.place++
-                        }
+        var place = leaderboard.size
+        var found = false
+        leaderboard.forEach {
+            if (!found) {
+                if (score >= it.points) {
+                    place = it.place
+                    found = true
+                    if (score > it.points) {
+                        it.place++
                     }
-                } else {
+                }
+            } else {
+                if (score > it.points) {
                     it.place++
                 }
             }
-            leaderboard.add(place, Result(place, textDialog.editor.text, score))
-            val f = File("leaderboard.json")
-            f.bufferedWriter().use {
-                val json = Json.encodeToString(leaderboard)
-                it.write(json)
+        }
+        if (place < 10 || leaderboard.size < 10) {
+            textDialog.contentText = ""
+            textDialog.show()
+            textDialog.onHidden = EventHandler {
+                if (textDialog.editor.text.isNotEmpty()) {
+                    leaderboard.add(place, Result(place, textDialog.editor.text, score))
+                    leaderboard = leaderboard.subList(0, 10)
+                    val f = File("leaderboard.json")
+                    f.bufferedWriter().use {
+                        val json = Json.encodeToString(leaderboard)
+                        it.write(json)
+                    }
+                    fillLeaderboard()
+                }
+                state = State.MENU
+                mainStage.scene = menuScene
             }
         }
-        state = State.MENU
     }
 
     private fun prepareActionHandlers() {
@@ -149,16 +204,11 @@ class Game : Application() {
     }
 
     private fun tickAndRender(currentNanoTime: Long) {
-        // the time elapsed since the last frame, in nanoseconds
-        // can be used for physics calculation, etc
         val elapsedNanos = currentNanoTime - lastFrameTime
         lastFrameTime = currentNanoTime
-
-        // clear canvas
-        graphicsContext.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
-
-        val elapsedMs = elapsedNanos / 1_000_000
-        if (state != State.MENU) {
+        if (state == State.PLAYING || state == State.PAUSED) {
+            val elapsedMs = elapsedNanos / 1_000_000
+            graphicsContext.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
             graphicsContext.font = Constants.HUGE_FONT
             graphicsContext.fill = Constants.PURPLE
             graphicsContext.fillText("TETRIS", 180.0, 50.0)
@@ -196,12 +246,6 @@ class Game : Application() {
                     board.step()
                 }
             }
-        }
-        // display crude fps counter
-        if (elapsedMs != 0L) {
-            graphicsContext.font = Constants.SMALL_FONT
-            graphicsContext.fill = Color.BLACK
-            graphicsContext.fillText("${1000 / elapsedMs} fps", 10.0, 10.0)
         }
     }
 
