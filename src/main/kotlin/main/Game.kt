@@ -9,14 +9,13 @@ import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
+import javafx.scene.control.Alert
 import javafx.scene.control.Button
 import javafx.scene.control.TextInputDialog
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.VBox
-import javafx.scene.paint.Color
 import javafx.scene.text.Text
-import javafx.scene.text.TextFlow
 import javafx.stage.Stage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -60,6 +59,9 @@ class Game : Application() {
         mainScene = Scene(mainRoot)
         val canvas = Canvas(WIDTH.toDouble(), HEIGHT.toDouble())
         mainRoot.children.add(canvas)
+        graphicsContext = canvas.graphicsContext2D
+
+        // textDialog when you earn a highscore
         textDialog.headerText = "Congrats, you earned a place on the leaderboard! Please enter your name"
         textDialog.title = "Enter your name"
 
@@ -83,7 +85,6 @@ class Game : Application() {
         bp.top = vbox
         this.mainStage.scene = menuScene
 
-        //menuRoot.children.add(startButton)
         startButton.onMouseClicked = EventHandler {
             state = State.PLAYING
             mainStage.scene = mainScene
@@ -101,7 +102,11 @@ class Game : Application() {
         }
 
         //leaderboard
-        leaderboard = Json.decodeFromString(File("leaderboard.json").readText())
+        val inputFile = File("leaderboard.json")
+        if (!inputFile.exists()) {
+            inputFile.bufferedWriter().use { it.write("[]") }
+        }
+        leaderboard = Json.decodeFromString(inputFile.readText())
         leaderboardVBox = VBox()
         fillLeaderboard()
 
@@ -109,14 +114,13 @@ class Game : Application() {
         val howToPlayTitle = Text("How to play")
         howToPlayTitle.font = Constants.BIG_FONT
         val howToPlayVBox = VBox()
-        howToPlayVBox.children.addAll(howToPlayTitle, Text("Standar Tetris game. Move the Tetrimino with the right,\nleft and down arrow keys, rotate it with the up arrow, \ndrop it with space, store it with shift.\nYou can pause/resume the game with Enter. \nGood luck!"))
+        howToPlayVBox.children.addAll(howToPlayTitle, Text("Standard Tetris game. Move the Tetrimino with the right,\nleft and down arrow keys, rotate it with the up arrow, \ndrop it with space, store it with shift.\nYou can pause/resume the game with Enter. \nGood luck!"))
         howToPlayVBox.padding = Insets(20.0, 0.0, 80.0, 0.0)
 
         bp.center = VBox(leaderboardVBox, howToPlayVBox)
         val creditText = Text("Developed by: Sámuel Fekete\nGitHub username: Tschonti")
         creditText.font = Constants.BIG_FONT
         bp.bottom = creditText
-        graphicsContext = canvas.graphicsContext2D
 
         // Main loop
         object : AnimationTimer() {
@@ -128,6 +132,9 @@ class Game : Application() {
         mainStage.show()
     }
 
+    /**
+     * Fills the leaderboard on the menu screen with the contents of the leaderbord object stored in memory
+     */
     private fun fillLeaderboard() {
         leaderboardVBox.children.clear()
         val leaderboardTitle = Text("Leaderboard")
@@ -139,8 +146,48 @@ class Game : Application() {
 
     }
 
+    /**
+     * If the user scored higher than No 10 on the leaderboard, it asks for their name and updates the leaderboard object.
+     * Then it switches back to the menu screen.
+     */
     fun gameOver() {
         state = State.GAMEOVER
+        val place = determinePlacing()
+        if (place < 10 || leaderboard.size < 10) {
+            textDialog.editor.text = ""
+            textDialog.show()
+            textDialog.onHidden = EventHandler {
+                if (textDialog.editor.text.isNotEmpty()) {
+                    leaderboard.add(place, Result(place, textDialog.editor.text, score))
+                    leaderboard = leaderboard.subList(0, 10)
+                    val f = File("leaderboard.json")
+                    f.bufferedWriter().use { bw ->
+                        val json = Json.encodeToString(leaderboard)
+                        bw.write(json)
+                    }
+                    fillLeaderboard()
+                }
+                state = State.MENU
+                mainStage.scene = menuScene
+            }
+        } else {
+            val alert = Alert(Alert.AlertType.INFORMATION)
+            alert.title = "Game Over"
+            alert.headerText = "Game over! Your score is $score. \nUnfortunately, you haven't made the leaderboard.\nBetter luck next time!"
+            alert.show()
+            alert.onHidden = EventHandler {
+                state = State.MENU
+                mainStage.scene = menuScene
+            }
+        }
+    }
+
+    /**
+     * Determines the placing of the user on the leaderboard.
+     * If the user's score fits on the leaderboard, it adds one to the placing of every user with less points,
+     * but it doesn't add the new user to the leaderboard!
+     */
+    private fun determinePlacing(): Int {
         var place = leaderboard.size
         var found = false
         leaderboard.forEach {
@@ -158,24 +205,7 @@ class Game : Application() {
                 }
             }
         }
-        if (place < 10 || leaderboard.size < 10) {
-            textDialog.contentText = ""
-            textDialog.show()
-            textDialog.onHidden = EventHandler {
-                if (textDialog.editor.text.isNotEmpty()) {
-                    leaderboard.add(place, Result(place, textDialog.editor.text, score))
-                    leaderboard = leaderboard.subList(0, 10)
-                    val f = File("leaderboard.json")
-                    f.bufferedWriter().use {
-                        val json = Json.encodeToString(leaderboard)
-                        it.write(json)
-                    }
-                    fillLeaderboard()
-                }
-                state = State.MENU
-                mainStage.scene = menuScene
-            }
-        }
+        return place
     }
 
     private fun prepareActionHandlers() {
@@ -206,16 +236,21 @@ class Game : Application() {
     private fun tickAndRender(currentNanoTime: Long) {
         val elapsedNanos = currentNanoTime - lastFrameTime
         lastFrameTime = currentNanoTime
-        if (state == State.PLAYING || state == State.PAUSED) {
+        if (state != State.MENU) {
             val elapsedMs = elapsedNanos / 1_000_000
+
+            // clear the canvas
             graphicsContext.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
+
+            // title
             graphicsContext.font = Constants.HUGE_FONT
             graphicsContext.fill = Constants.PURPLE
             graphicsContext.fillText("TETRIS", 180.0, 50.0)
 
-            // perform world updates
+            //board
             board.draw(graphicsContext)
 
+            // score
             graphicsContext.font = Constants.BIG_FONT
             graphicsContext.fill = Constants.PURPLE
             graphicsContext.fillText("Score: $score", 2.0, 700.0)
@@ -223,6 +258,7 @@ class Game : Application() {
                 graphicsContext.fillText("+$scored", 400.0, 700.0)
             }
 
+            // paused
             if (state == State.PAUSED) {
                 graphicsContext.fill = Constants.RED
                 graphicsContext.fillRect(220.0, 300.0, 40.0, 100.0)
@@ -249,11 +285,13 @@ class Game : Application() {
         }
     }
 
+    /**
+     * Adds to the user's score based on the number of rows clear and their current combo
+     */
     fun rowsCleared(rows: Int, combo: Int) {
         if (rows > 0) {
             scored = ((rows - 1) * 200 + if (rows == 4) 200 else 100) * (combo + 1)
             score += scored
-            println("Cleard $rows row(s) with x${combo+1} combo, scored $scored, new score: $score")
 
             if ((score - lastThousand) > 1000) {
                 lastThousand += 1000

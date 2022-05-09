@@ -50,10 +50,6 @@ class Orange : Tetrimino() {
         return true
     }
 
-    override fun rotateLeft() {
-        TODO("Not yet implemented")
-    }
-
     override fun generateBlocks(): List<Block> {
         return listOf(
             Block(Position(5, 2)),

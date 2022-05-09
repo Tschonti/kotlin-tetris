@@ -2,10 +2,10 @@ package main
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
-import javafx.scene.text.Font
 import pieces.Tetrimino
 
 class Board(private val game: Game) {
+    // Two-dimensional array of blocks
     private val board = Array(Constants.HEIGHT) { y -> Array(Constants.WIDTH) { x -> Block(Position(x, y), Constants.GRAY, true)} }
     lateinit var activeTetrimino: Tetrimino
     private var nextTetrimino: Tetrimino = Tetrimino.generateTetrimino()
@@ -71,6 +71,7 @@ class Board(private val game: Game) {
      * Draws the board to the [gc]
      */
     fun draw(gc: GraphicsContext) {
+        //draw the board itself
         for (y: Int in 0 until Constants.HEIGHT) {
             for (x: Int in 0 until Constants.WIDTH) {
                 val b = board[y][x]

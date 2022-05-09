@@ -6,6 +6,10 @@ import main.*
 abstract class Tetrimino {
     companion object {
         lateinit var board: Board
+
+        /**
+         * Generates a random tetrimino
+         */
         fun generateTetrimino(): Tetrimino {
             return when (Game.random.nextInt(0, 7)) {
                 0 -> Blue()
@@ -18,7 +22,7 @@ abstract class Tetrimino {
             }
         }
     }
-    abstract val size: Int
+    abstract val size: Int      // max(length on the x axis, length on the y axis)
     var blocks: List<Block>
     abstract val color: Color
     protected var orientation: Direction = Direction.UP
@@ -130,6 +134,7 @@ abstract class Tetrimino {
 
     /**
      * Calculates helper fields for rotating, and checks if the tetrimino can be rotated.
+     * For the actual rotation, this method has to be expanded in the non-abstract class
      */
     open fun rotateRight(): Boolean {
         leftBound = board.leftBound(this)
@@ -154,11 +159,17 @@ abstract class Tetrimino {
         return true
     }
 
+    /**
+     * Moves the Tetrimino to it's starting position (top of the board)
+     */
     fun toStartingPos() {
         blocks = generateBlocks()
         blocks.forEach { it.color = color }
     }
 
-    abstract fun rotateLeft()
+    /**
+     * Generates the blocks of the tetrimino in their starting position.
+     * It doesn't set the color.
+     */
     protected abstract fun generateBlocks(): List<Block>
 }

@@ -14,7 +14,6 @@ class Yellow : Tetrimino() {
 
     override fun rotateRight(): Boolean { return true}
 
-    override fun rotateLeft() {}
     override fun generateBlocks(): List<Block> {
         return listOf(
             Block(Position(4, 0)),
