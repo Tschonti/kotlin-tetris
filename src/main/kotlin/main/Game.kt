@@ -173,6 +173,17 @@ class Game : Application() {
                 graphicsContext.fillText("+$scored", 400.0, 700.0)
             }
 
+            if (state == State.PAUSED) {
+                graphicsContext.fill = Constants.RED
+                graphicsContext.fillRect(220.0, 300.0, 40.0, 100.0)
+                graphicsContext.fillRect(280.0, 300.0, 40.0, 100.0)
+                graphicsContext.font = Constants.BIG_FONT
+                graphicsContext.fillText("Paused", 220.0, 440.0)
+                graphicsContext.font = Constants.SMALL_FONT
+                graphicsContext.fillText("Resume with Enter", 230.0, 460.0)
+
+            }
+
             if (state == State.GAMEOVER) {
                 graphicsContext.fill = Constants.RED
                 graphicsContext.fillText("Game over!", 175.0, 700.0)
