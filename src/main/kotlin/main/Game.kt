@@ -267,7 +267,6 @@ class Game : Application() {
                 graphicsContext.fillRect(280.0, 300.0, 40.0, 100.0)
                 graphicsContext.font = Constants.BIG_FONT
                 graphicsContext.fillText("Paused", 220.0, 440.0)
-                //graphicsContext.font = Constants.SMALL_FONT
                 graphicsContext.fillText("Resume with Enter", 150.0, 480.0)
 
             }
