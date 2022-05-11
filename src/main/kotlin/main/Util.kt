@@ -38,6 +38,7 @@ class Constants {
         val YELLOW = Color(0.9098, 0.83921, 0.08235, 1.0)
         val CYAN = Color(0.2745, 0.83137, 0.8588, 1.0)
         val GREEN = Color(0.01569, 0.67, 0.09411, 1.0)
+        val BLACK = Color(0.0, 0.0, 0.0, 1.0)
         const val boardOffsetX = 120.0
         const val boardOffsetY = 100.0
         const val gapBetweenBlocks = 2.0

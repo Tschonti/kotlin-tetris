@@ -91,8 +91,8 @@ class Board(private val game: Game) {
 
         gc.fill = Constants.PURPLE
         gc.font = Constants.BIG_FONT
-        gc.fillText("Next", 400.0, 80.0)
-        gc.fillText("Stored", 2.0, 80.0)
+        gc.fillText("Next", 415.0, 80.0)
+        gc.fillText("Stored", 12.0, 80.0)
         // draw the upcoming tetrimino
         drawRectWithTetrimino(gc, nextTetrimino, 400.0)
 

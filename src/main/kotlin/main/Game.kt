@@ -159,7 +159,9 @@ class Game : Application() {
             textDialog.onHidden = EventHandler {
                 if (textDialog.editor.text.isNotEmpty()) {
                     leaderboard.add(place, Result(place, textDialog.editor.text, score))
-                    leaderboard = leaderboard.subList(0, 10)
+                    if (leaderboard.size > 10) {
+                        leaderboard = leaderboard.subList(0, 10)
+                    }
                     val f = File("leaderboard.json")
                     f.bufferedWriter().use { bw ->
                         val json = Json.encodeToString(leaderboard)
@@ -253,20 +255,20 @@ class Game : Application() {
             // score
             graphicsContext.font = Constants.BIG_FONT
             graphicsContext.fill = Constants.PURPLE
-            graphicsContext.fillText("Score: $score", 2.0, 700.0)
+            graphicsContext.fillText("Score: $score", 12.0, 700.0)
             if (scored > 0) {
                 graphicsContext.fillText("+$scored", 400.0, 700.0)
             }
 
             // paused
             if (state == State.PAUSED) {
-                graphicsContext.fill = Constants.RED
+                graphicsContext.fill = Constants.BLACK
                 graphicsContext.fillRect(220.0, 300.0, 40.0, 100.0)
                 graphicsContext.fillRect(280.0, 300.0, 40.0, 100.0)
                 graphicsContext.font = Constants.BIG_FONT
                 graphicsContext.fillText("Paused", 220.0, 440.0)
-                graphicsContext.font = Constants.SMALL_FONT
-                graphicsContext.fillText("Resume with Enter", 230.0, 460.0)
+                //graphicsContext.font = Constants.SMALL_FONT
+                graphicsContext.fillText("Resume with Enter", 150.0, 480.0)
 
             }
 
