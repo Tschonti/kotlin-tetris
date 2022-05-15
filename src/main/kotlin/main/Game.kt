@@ -297,6 +297,9 @@ class Game : Application() {
             if ((score - lastThousand) > 1000) {
                 lastThousand += 1000
                 interval -= 35
+                if (interval < 100) {
+                    interval = 100
+                }
             }
         } else {
             scored = 0
